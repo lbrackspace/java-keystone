@@ -21,14 +21,13 @@ public class KeyStoneClientTest {
     @Before
     public void standUp() throws URISyntaxException {
         auth_url = KeyStoneUtil.getProperty("auth_management_uri");
-        auth_stag_url = KeyStoneUtil.getProperty("auth_stag_url");
         username = "bobTester";
         key = "1234567891011121313";
     }
 
     @Test
     public void validateCloudUser() throws Exception {
-        client = new KeyStoneClient(auth_stag_url);
+        client = new KeyStoneClient(auth_url);
         try {
             authData = client.authenticateUser(username, key);
             assertNotNull(authData);

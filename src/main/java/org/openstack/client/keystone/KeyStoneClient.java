@@ -26,7 +26,7 @@ public class KeyStoneClient {
     public KeyStoneClient(String authUrl, Client client) throws KeyStoneException {
         this.authUrl = authUrl;
         if (authUrl == null) {
-            this.authUrl = KeyStoneUtil.getProperty("auth_public_uri");
+            this.authUrl = KeyStoneUtil.getProperty("auth_management_uri");
         }
         this.client = client;
     }
@@ -47,7 +47,7 @@ public class KeyStoneClient {
      * the properties file
      */
     public KeyStoneClient() throws KeyStoneException {
-        this(KeyStoneUtil.getProperty("auth_public_uri"));
+        this(KeyStoneUtil.getProperty("auth_management_uri"));
     }
 
 
