@@ -1,0 +1,21 @@
+This binding will create a usable jar that can be added to a maven repository for the 1.1 auth spec
+
+To build jar run: mvn clean package
+
+This will build with tests, the test require basic auth credentials for the admin interface.
+
+The required credentials should be located in resources in a keystone.properties file and include:
+auth_management_url = http://myauth.com/v1.0/
+basic_auth_user = user
+basic_auth_key = basicKey
+
+To use include the maven dependency such as
+<dependency>
+   <groupId>org.openstack.client.keystone</groupId>
+    <artifactId>java-keystone</artifactId>
+    <version>1.0</version>
+</dependency>
+
+TODO: Scratch this and write for 2.0...
+
+
