@@ -67,12 +67,6 @@
                         <artifactId>collection-setter-injector</artifactId>
                         <version>1.0</version>
                     </dependency>
-                    <dependency>
-                        <groupId>xew</groupId>
-                        <artifactId>xew-openstack</artifactId>
-                        <version>1.0.0</version>
-                        <scope>runtime</scope>
-                    </dependency>
                 </dependencies>
 
                 <executions>
