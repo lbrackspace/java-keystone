@@ -81,8 +81,6 @@
                             <clearOutputDir>false</clearOutputDir>
                             <schemaFiles>Auth.xsd</schemaFiles>
                             <packageName>org.openstack.client.keystone.auth</packageName>
-                            <!--<arguments>-Xcollection-setter-injector</arguments>-->
-                            <arguments>-Xxew -setters</arguments>
                         </configuration>
                         <goals>
                             <goal>xjc</goal>
@@ -99,7 +97,6 @@
                             <clearOutputDir>false</clearOutputDir>
                             <schemaFiles>Faults.xsd</schemaFiles>
                             <packageName>org.openstack.client.keystone.faults</packageName>
-                            <arguments>-Xcollection-setter-injector</arguments>
                         </configuration>
                         <goals>
                             <goal>xjc</goal>
@@ -116,7 +113,6 @@
                             <clearOutputDir>false</clearOutputDir>
                             <schemaFiles>User.xsd</schemaFiles>
                             <packageName>org.openstack.client.keystone.user</packageName>
-                            <arguments>-Xcollection-setter-injector</arguments>
                         </configuration>
                         <goals>
                             <goal>xjc</goal>
@@ -133,8 +129,6 @@
                             <clearOutputDir>false</clearOutputDir>
                             <schemaFiles>Token.xsd</schemaFiles>
                             <packageName>org.openstack.client.keystone.token</packageName>
-                            <!--<arguments>-Xcollection-setter-injector</arguments>-->
-                            <arguments>-Xxew -setters</arguments>
                         </configuration>
                         <goals>
                             <goal>xjc</goal>
