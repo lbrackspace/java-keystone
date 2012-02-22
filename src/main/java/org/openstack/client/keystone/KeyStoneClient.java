@@ -78,6 +78,11 @@ public class KeyStoneClient {
         if (response != null && response.getStatus() == KeyStoneConstants.ACCEPTED || response.getStatus() == KeyStoneConstants.NON_AUTHORATIVE) {
             return response.getEntity(AuthData.class);
         }
+
+        if (response != null && response.getStatus() == KeyStoneConstants.UNAUTHORIZED) {
+            return response.getEntity(AuthData.class);
+        }
+
         throw new KeyStoneException("The response could not be processed", null, response.getStatus());
     }
 
