@@ -6,7 +6,7 @@
 
     <groupId>org.openstack.client.keystone</groupId>
     <artifactId>java-keystone</artifactId>
-    <version>1.0</version>
+    <version>1.2</version>
     <dependencies>
         <dependency>
             <groupId>commons-logging</groupId>

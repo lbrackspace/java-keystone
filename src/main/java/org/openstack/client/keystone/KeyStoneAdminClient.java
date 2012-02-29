@@ -10,7 +10,7 @@ import org.apache.commons.logging.LogFactory;
 import org.openstack.client.keystone.Wrapper.KeyStonePropertyWrapper;
 import org.openstack.client.keystone.Wrapper.KeyStoneResponseWrapper;
 import org.openstack.client.keystone.token.FullToken;
-import org.openstack.client.keystone.user.User;
+import org.openstack.client.keystone.user.*;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -328,6 +328,28 @@ public class KeyStoneAdminClient {
             logger.info("Connected! processing response... response status is " + response.getStatus());
             if (response != null && response.getStatus() == KeyStoneConstants.ACCEPTED || response.getStatus() == KeyStoneConstants.NON_AUTHORATIVE) {
                 return response.getEntity(User.class);
+            } else {
+                logger.info("The service returned a fault. status code: " + response.getStatus());
+                throw KeyStoneResponseWrapper.buildFaultMessage(response);
+            }
+        } catch (UniformInterfaceException ux) {
+            throw KeyStoneResponseWrapper.buildFaultMessage(ux.getResponse());
+        } catch (IllegalArgumentException ex) {
+            throw new KeyStoneException(ex.getMessage(), KeyStoneConstants.MISSING_PROP, KeyStoneConstants.AUTH_FAULT);
+        }
+    }
+
+    public BaseURLRefList getBaseUrls(String username) throws KeyStoneException, URISyntaxException {
+        try {
+
+            URI uri = new URI(authUrl + KeyStoneConstants.USER_PATH);
+            logger.info("Attempting to contact auth service at: " + uri);
+
+            ClientResponse response = client.resource(uri)
+                    .path(username).path(KeyStoneConstants.BASE_URL_REF_PATH).type(MediaType.APPLICATION_XML).accept(MediaType.APPLICATION_XML).get(ClientResponse.class);
+            logger.info("Connected! processing response... response status is " + response.getStatus());
+            if (response != null && response.getStatus() == KeyStoneConstants.ACCEPTED || response.getStatus() == KeyStoneConstants.NON_AUTHORATIVE) {
+                return response.getEntity(BaseURLRefList.class);
             } else {
                 logger.info("The service returned a fault. status code: " + response.getStatus());
                 throw KeyStoneResponseWrapper.buildFaultMessage(response);

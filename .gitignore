@@ -8,10 +8,10 @@
 .project
 .classpath
 *.properties
-*/target
+/target/
 classes/
 */target/*
-*/*/target
+*/*/target/
 
 ## generic files to ignore
 *~

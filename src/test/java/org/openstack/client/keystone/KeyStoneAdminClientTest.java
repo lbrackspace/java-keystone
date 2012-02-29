@@ -6,6 +6,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openstack.client.keystone.auth.AuthData;
 import org.openstack.client.keystone.token.FullToken;
+import org.openstack.client.keystone.user.BaseURL;
+import org.openstack.client.keystone.user.BaseURLRef;
+import org.openstack.client.keystone.user.BaseURLRefList;
 import org.openstack.client.keystone.user.User;
 
 import java.io.IOException;
@@ -378,6 +381,14 @@ public class KeyStoneAdminClientTest {
         User user = clientKeyStone.createUser("bobTest3", "1234567891011121313", 123457, "longNastidNameShouldg0here1", true);
         clientKeyStone.deleteUser(user.getId());
         clientKeyStone.listUser(user.getId());
+    }
+
+    @Test
+    public void getEnabledBaseUrls() throws KeyStoneException, URISyntaxException {
+        KeyStoneAdminClient clientKeyStone = new KeyStoneAdminClient(auth_stag_url);
+        BaseURLRefList urls = clientKeyStone.getBaseUrls("bobTester");
+        assertNotNull(urls);
+        System.out.println(urls.toString());
     }
 
     private User listUserForTests(KeyStoneAdminClient keyStoneAdminClient) throws URISyntaxException, KeyStoneException {

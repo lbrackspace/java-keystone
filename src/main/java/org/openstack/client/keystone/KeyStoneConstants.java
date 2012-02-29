@@ -43,13 +43,14 @@ public class KeyStoneConstants {
     public static final String MOSSO_TYPE = "mosso";
     public static final String TOKEN_PATH = "token";
     public static final String USER_PATH = "users";
+    public static final String BASE_URL_PATH = "baseURLs";
+    public static final String BASE_URL_REF_PATH = "baseURLRefs";
     public static final String AUTH_PATH = "auth";
     public static final String KEY_PATH = "key";
 
     /** Default error responses **/
     public static final String MISSING_PROP = "One or more values necessary for this request could not be found, please check the request and try again.";
-
-     public static Properties MIMETYPES = new Properties ();
+    public static Properties MIMETYPES = new Properties ();
 
     static {
     	try
