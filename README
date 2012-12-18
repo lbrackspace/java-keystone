@@ -1,3 +1,10 @@
+####################################################################################################
+Deprecated! V2.0 is on its way...
+####################################################################################################
+
+
+
+
 This binding will create a usable jar that can be added to a maven repository for the 1.1 auth spec
 
 To build jar run: mvn clean package
