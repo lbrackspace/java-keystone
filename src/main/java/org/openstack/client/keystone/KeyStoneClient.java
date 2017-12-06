@@ -1,15 +1,14 @@
 package org.openstack.client.keystone;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.UniformInterfaceException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openstack.client.keystone.Wrapper.KeyStoneResponseWrapper;
 import org.openstack.client.keystone.auth.AuthData;
 import org.openstack.client.keystone.pojo.CloudCredentials;
 
+import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -39,7 +38,7 @@ public class KeyStoneClient {
      * @throws URISyntaxException
      */
     public KeyStoneClient(String authUrl) throws KeyStoneException {
-        this(authUrl, Client.create());
+        this(authUrl, ClientBuilder.newBuilder().build());
     }
 
     /**
@@ -65,22 +64,22 @@ public class KeyStoneClient {
      */
     public AuthData authenticateUser(String url, String username, String key) throws KeyStoneException, URISyntaxException {
         URI uri = new URI(url + KeyStoneConstants.AUTH_PATH);
-        ClientResponse response;
+        Response response;
         try {
             CloudCredentials cloudCredentials = new CloudCredentials();
             cloudCredentials.setUsername(username);
             cloudCredentials.setKey(key);
-            response = client.resource(uri).type(MediaType.APPLICATION_XML).accept(MediaType.APPLICATION_XML).post(ClientResponse.class, cloudCredentials);
-        } catch (UniformInterfaceException ux) {
+            response = client.target(uri).request(MediaType.APPLICATION_XML).accept(MediaType.APPLICATION_XML).post(Entity.xml(cloudCredentials));
+        } catch (ResponseProcessingException ux) {
             throw KeyStoneResponseWrapper.buildFaultMessage(ux.getResponse());
         }
 
         if (response != null && response.getStatus() == KeyStoneConstants.ACCEPTED || response.getStatus() == KeyStoneConstants.NON_AUTHORATIVE) {
-            return response.getEntity(AuthData.class);
+            return (AuthData) response.getEntity();
         }
 
         if (response != null && response.getStatus() == KeyStoneConstants.UNAUTHORIZED) {
-            return response.getEntity(AuthData.class);
+            return (AuthData) response.getEntity();
         }
 
         throw new KeyStoneException("The response could not be processed", null, response.getStatus());

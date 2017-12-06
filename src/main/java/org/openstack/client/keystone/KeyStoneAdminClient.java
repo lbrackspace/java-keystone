@@ -1,19 +1,18 @@
 package org.openstack.client.keystone;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.UniformInterfaceException;
-import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.glassfish.jersey.client.ClientResponse;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.openstack.client.keystone.Wrapper.KeyStonePropertyWrapper;
 import org.openstack.client.keystone.Wrapper.KeyStoneResponseWrapper;
 import org.openstack.client.keystone.token.FullToken;
 import org.openstack.client.keystone.user.*;
 
+import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -43,7 +42,7 @@ public class KeyStoneAdminClient {
         this.basicAuthUserName = basicAuthUserName;
         this.client = client;
         if (client != null) {
-            this.client.addFilter(new HTTPBasicAuthFilter(basicAuthUserName, basicAuthKey));
+            this.client.register(HttpAuthenticationFeature.basic(basicAuthUserName, basicAuthKey));
         }
     }
 
@@ -56,7 +55,7 @@ public class KeyStoneAdminClient {
      * @throws URISyntaxException
      */
     public KeyStoneAdminClient(String authUrl, String basicAuthKey, String basicAuthUserName) throws KeyStoneException {
-        this(authUrl, basicAuthKey, basicAuthUserName, Client.create());
+        this(authUrl, basicAuthKey, basicAuthUserName,  ClientBuilder.newBuilder().build());
     }
 
     /**
@@ -92,24 +91,22 @@ public class KeyStoneAdminClient {
      * @throws URISyntaxException there was an error building the URI
      */
     public FullToken validateToken(String username, String token, String belongsToType) throws KeyStoneException, URISyntaxException {
-        MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
-        queryParams.add("belongsTo", username);
-        queryParams.add("type", KeyStonePropertyWrapper.mapType(belongsToType));
 
         try {
             URI uri = new URI(authUrl + KeyStoneConstants.TOKEN_PATH);
             logger.info("Attempting to contact auth service at: " + uri);
-            ClientResponse response = client.resource(uri)
-                    .path(token).queryParams(queryParams)
-                    .accept(MediaType.APPLICATION_XML).get(ClientResponse.class);
+            Response response = client.target(uri)
+                    .path(token).queryParam("belongsTo", username)
+                    .path(token).queryParam("type", KeyStonePropertyWrapper.mapType(belongsToType)).request()
+                    .accept(MediaType.APPLICATION_XML).get(Response.class);
             logger.info("Connected! processing response... response status is " + response.getStatus());
             if (response != null && response.getStatus() == KeyStoneConstants.ACCEPTED) {
-                return response.getEntity(FullToken.class);
+                return (FullToken) response.getEntity();
             } else {
                 logger.info("The service returned a fault. status code: " + response.getStatus());
                 throw KeyStoneResponseWrapper.buildFaultMessage(response);
             }
-        } catch (UniformInterfaceException ux) {
+        } catch (ResponseProcessingException ux) {
             throw KeyStoneResponseWrapper.buildFaultMessage(ux.getResponse());
         } catch (IllegalArgumentException ex) {
             throw new KeyStoneException(ex.getMessage(), KeyStoneConstants.MISSING_PROP, KeyStoneConstants.AUTH_FAULT);
@@ -128,16 +125,16 @@ public class KeyStoneAdminClient {
         try {
             URI uri = new URI(authUrl + KeyStoneConstants.TOKEN_PATH);
             logger.info("Attempting to contact auth service at: " + uri);
-            ClientResponse response = client.resource(uri)
-                    .path(tokenId).accept(MediaType.APPLICATION_XML).get(ClientResponse.class);
+            Response response = client.target(uri)
+                    .path(tokenId).request().accept(MediaType.APPLICATION_XML).get();
             logger.info("Connected! processing response... response status is " + response.getStatus());
             if (response != null && response.getStatus() == KeyStoneConstants.ACCEPTED) {
-                return response.getEntity(FullToken.class);
+                return (FullToken) response.getEntity();
             } else {
                 logger.info("The service returned a fault. status code: " + response.getStatus());
                 throw KeyStoneResponseWrapper.buildFaultMessage(response);
             }
-        } catch (UniformInterfaceException ux) {
+        } catch (ResponseProcessingException ux) {
             throw KeyStoneResponseWrapper.buildFaultMessage(ux.getResponse());
         } catch (IllegalArgumentException ex) {
             throw new KeyStoneException(ex.getMessage(), KeyStoneConstants.MISSING_PROP, KeyStoneConstants.AUTH_FAULT);
@@ -155,8 +152,8 @@ public class KeyStoneAdminClient {
         try {
             URI uri = new URI(authUrl + KeyStoneConstants.TOKEN_PATH);
             logger.info("Attempting to contact auth service at: " + uri);
-            ClientResponse response = client.resource(uri)
-                    .path(tokenId).accept(MediaType.APPLICATION_XML).delete(ClientResponse.class);
+            Response response = client.target(uri)
+                    .path(tokenId).request().accept(MediaType.APPLICATION_XML).delete();
             logger.info("Connected! processing response... response status is " + response.getStatus());
             if (response != null && response.getStatus() == KeyStoneConstants.ACCEPTED) {
                 return;
@@ -164,7 +161,7 @@ public class KeyStoneAdminClient {
                 logger.info("The service returned a fault. status code: " + response.getStatus());
                 throw KeyStoneResponseWrapper.buildFaultMessage(response);
             }
-        } catch (UniformInterfaceException ux) {
+        } catch (ResponseProcessingException ux) {
             throw KeyStoneResponseWrapper.buildFaultMessage(ux.getResponse());
         } catch (IllegalArgumentException ex) {
             throw new KeyStoneException(ex.getMessage(), KeyStoneConstants.MISSING_PROP, KeyStoneConstants.AUTH_FAULT);
@@ -186,15 +183,16 @@ public class KeyStoneAdminClient {
         try {
             URI uri = new URI(authUrl + requestType);
             logger.info("Attempting to contact auth service at: " + uri);
-            ClientResponse response = client.resource(uri).path(username).accept(MediaType.APPLICATION_XML).get(ClientResponse.class);
+            Response response = client.target(uri).path(username).request()
+                    .accept(MediaType.APPLICATION_XML).get();
             logger.info("Connected! processing response... response status is " + response.getStatus());
             if (response != null && response.getStatus() == KeyStoneConstants.ACCEPTED) {
-                return response.getEntity(User.class);
+                return response.readEntity(User.class);
             } else {
                 logger.info("The service returned a fault. status code: " + response.getStatus());
                 throw KeyStoneResponseWrapper.buildFaultMessage(response);
             }
-        } catch (UniformInterfaceException ux) {
+        } catch (ResponseProcessingException ux) {
             throw KeyStoneResponseWrapper.buildFaultMessage(ux.getResponse());
         } catch (IllegalArgumentException ex) {
             throw new KeyStoneException(ex.getMessage(), KeyStoneConstants.MISSING_PROP, KeyStoneConstants.AUTH_FAULT);
@@ -226,16 +224,16 @@ public class KeyStoneAdminClient {
         try {
             URI uri = new URI(authUrl + KeyStoneConstants.USER_PATH);
             logger.info("Attempting to contact auth service at: " + uri);
-            ClientResponse response = client.resource(uri)
-                    .path(username).path(KeyStoneConstants.KEY_PATH).accept(MediaType.APPLICATION_XML).get(ClientResponse.class);
+            Response response = client.target(uri)
+                    .path(username).path(KeyStoneConstants.KEY_PATH).request().accept(MediaType.APPLICATION_XML).get();
             logger.info("Connected! processing response... response status is " + response.getStatus());
             if (response != null && response.getStatus() == KeyStoneConstants.ACCEPTED) {
-                return response.getEntity(User.class);
+                return response.readEntity(User.class);
             } else {
                 logger.info("The service returned a fault. status code: " + response.getStatus());
                 throw KeyStoneResponseWrapper.buildFaultMessage(response);
             }
-        } catch (UniformInterfaceException ux) {
+        } catch (ResponseProcessingException ux) {
             throw KeyStoneResponseWrapper.buildFaultMessage(ux.getResponse());
         } catch (IllegalArgumentException ex) {
             throw new KeyStoneException(ex.getMessage(), KeyStoneConstants.MISSING_PROP, KeyStoneConstants.AUTH_FAULT);
@@ -264,15 +262,16 @@ public class KeyStoneAdminClient {
             user.setNastId(nastId);
             user.setEnabled(enabled);
 
-            ClientResponse response = client.resource(uri).accept(MediaType.APPLICATION_XML).post(ClientResponse.class, user);
+            Response response = client.target(uri).request()
+                    .accept(MediaType.APPLICATION_XML).post(Entity.xml(user));
             logger.info("Connected! processing response... response status is " + response.getStatus());
             if (response != null && response.getStatus() == KeyStoneConstants.CREATED) {
-                return response.getEntity(User.class);
+                return response.readEntity(User.class);
             } else {
                 logger.info("The service returned a fault. status code: " + response.getStatus());
                 throw KeyStoneResponseWrapper.buildFaultMessage(response);
             }
-        } catch (UniformInterfaceException ux) {
+        } catch (ResponseProcessingException ux) {
             throw KeyStoneResponseWrapper.buildFaultMessage(ux.getResponse());
         } catch (IllegalArgumentException ex) {
             throw new KeyStoneException(ex.getMessage(), KeyStoneConstants.MISSING_PROP, KeyStoneConstants.AUTH_FAULT);
@@ -290,8 +289,8 @@ public class KeyStoneAdminClient {
         try {
             URI uri = new URI(authUrl + KeyStoneConstants.USER_PATH);
             logger.info("Attempting to contact auth service at: " + uri);
-            ClientResponse response = client.resource(uri).path(username)
-                    .type(MediaType.APPLICATION_XML).accept(MediaType.APPLICATION_XML).delete(ClientResponse.class);
+            Response response = client.target(uri).path(username).request(MediaType.APPLICATION_XML)
+                    .accept(MediaType.APPLICATION_XML).delete();
             logger.info("Connected! processing response... response status is " + response.getStatus());
             if (response != null && response.getStatus() != KeyStoneConstants.NO_CONTENT) {
                 logger.info("The service returned a fault. status code: " + response.getStatus());
@@ -299,7 +298,7 @@ public class KeyStoneAdminClient {
             } else {
                 return;
             }
-        } catch (UniformInterfaceException ux) {
+        } catch (ResponseProcessingException ux) {
             throw KeyStoneResponseWrapper.buildFaultMessage(ux.getResponse());
         } catch (IllegalArgumentException ex) {
             throw new KeyStoneException(ex.getMessage(), KeyStoneConstants.MISSING_PROP, KeyStoneConstants.AUTH_FAULT);
@@ -322,17 +321,17 @@ public class KeyStoneAdminClient {
             org.openstack.client.keystone.pojo.User user = new org.openstack.client.keystone.pojo.User();
             user.setKey(key);
 
-            ClientResponse response = client.resource(uri)
+            Response response = client.target(uri)
                     .path(username).path(KeyStoneConstants.KEY_PATH)
-                    .type(MediaType.APPLICATION_XML).accept(MediaType.APPLICATION_XML).put(ClientResponse.class, user);
+                    .request(MediaType.APPLICATION_XML).accept(MediaType.APPLICATION_XML).put(Entity.xml(user));
             logger.info("Connected! processing response... response status is " + response.getStatus());
             if (response != null && response.getStatus() == KeyStoneConstants.ACCEPTED || response.getStatus() == KeyStoneConstants.NON_AUTHORATIVE) {
-                return response.getEntity(User.class);
+                return response.readEntity(User.class);
             } else {
                 logger.info("The service returned a fault. status code: " + response.getStatus());
                 throw KeyStoneResponseWrapper.buildFaultMessage(response);
             }
-        } catch (UniformInterfaceException ux) {
+        } catch (ResponseProcessingException ux) {
             throw KeyStoneResponseWrapper.buildFaultMessage(ux.getResponse());
         } catch (IllegalArgumentException ex) {
             throw new KeyStoneException(ex.getMessage(), KeyStoneConstants.MISSING_PROP, KeyStoneConstants.AUTH_FAULT);
@@ -345,16 +344,16 @@ public class KeyStoneAdminClient {
             URI uri = new URI(authUrl + KeyStoneConstants.USER_PATH);
             logger.info("Attempting to contact auth service at: " + uri);
 
-            ClientResponse response = client.resource(uri)
-                    .path(username).path(KeyStoneConstants.BASE_URL_REF_PATH).type(MediaType.APPLICATION_XML).accept(MediaType.APPLICATION_XML).get(ClientResponse.class);
+            Response response = client.target(uri)
+                    .path(username).path(KeyStoneConstants.BASE_URL_REF_PATH).request(MediaType.APPLICATION_XML).accept(MediaType.APPLICATION_XML).get();
             logger.info("Connected! processing response... response status is " + response.getStatus());
             if (response != null && response.getStatus() == KeyStoneConstants.ACCEPTED || response.getStatus() == KeyStoneConstants.NON_AUTHORATIVE) {
-                return response.getEntity(BaseURLRefList.class);
+                return response.readEntity(BaseURLRefList.class);
             } else {
                 logger.info("The service returned a fault. status code: " + response.getStatus());
                 throw KeyStoneResponseWrapper.buildFaultMessage(response);
             }
-        } catch (UniformInterfaceException ux) {
+        } catch (ResponseProcessingException ux) {
             throw KeyStoneResponseWrapper.buildFaultMessage(ux.getResponse());
         } catch (IllegalArgumentException ex) {
             throw new KeyStoneException(ex.getMessage(), KeyStoneConstants.MISSING_PROP, KeyStoneConstants.AUTH_FAULT);
